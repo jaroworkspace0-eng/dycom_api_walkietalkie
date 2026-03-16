@@ -30,4 +30,9 @@ class Employee extends Model
     public function user() {
         return $this->belongsTo(User::class);
     }
+
+    public function resolveRouteBinding($value, $field = null)
+    {
+        return $this->where('user_id', $value)->firstOrFail();
+    }
 }
