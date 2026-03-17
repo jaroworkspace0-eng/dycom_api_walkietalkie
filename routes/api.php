@@ -76,6 +76,7 @@ Route::post('/login', function (Request $request) {
             'phone' => $user->phone,
             'occupation' => $user->occupation,
             'user_id' => $user->id,
+            'role' => $user->role
         ],
         'channels' => $channels,
         'token' => $token,
