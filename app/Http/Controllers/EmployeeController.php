@@ -148,15 +148,7 @@ public function store(Request $request)
         'channel_ids.*'  => 'exists:channels,id',
         
         // Role is strictly required
-        'role'           => 'required|string', 
-
-        // Address fields required ONLY for household/resident
-        'address_line_1' => 'required_if:role,household,resident|nullable|string',
-        'suburb'         => 'required_if:role,household,resident|nullable|string',
-        'latitude'       => 'required_if:role,household,resident|nullable|numeric',
-        'longitude'      => 'required_if:role,household,resident|nullable|numeric',
-        'complex_name'   => 'nullable|string',
-        'access_code'    => 'nullable|string',
+        'role'           => 'required|string',
     ], [
             // Custom error message for the regex
             'phone.regex' => 'The phone number must include a country code starting with +',
@@ -173,13 +165,6 @@ public function store(Request $request)
         $user = User::create(array_merge($validated, [
             'role'           => $finalRole,
             'password'       => bcrypt($validated['password']),
-            // Nullify address fields if role is employee
-            'address_line_1' => ($finalRole !== 'employee') ? $validated['address_line_1'] : null,
-            'suburb'         => ($finalRole !== 'employee') ? $validated['suburb'] : null,
-            'latitude'       => ($finalRole !== 'employee') ? $validated['latitude'] : null,
-            'longitude'      => ($finalRole !== 'employee') ? $validated['longitude'] : null,
-            'complex_name'   => ($finalRole !== 'employee') ? $validated['complex_name'] : null,
-            'access_code'    => ($finalRole !== 'employee') ? $validated['access_code'] : null,
         ]));
 
         // 2. Derive client_id from the first channel
