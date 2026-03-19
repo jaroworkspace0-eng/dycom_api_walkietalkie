@@ -184,8 +184,8 @@ public function getUnits(Channel $channel)
         $employee = \App\Models\Employee::where('user_id', $request->user_id)
             ->firstOrFail();
 
-        $employee->channels()->sync($request->channel_ids);
-
+        // No sync here — update() already saved to DB.
+        // We just return the fresh list for Node to push to the device.
         return response()->json(
             $employee->channels()->select('channels.id', 'channels.name')->get()
         );
