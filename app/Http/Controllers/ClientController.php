@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Client;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -131,6 +132,15 @@ public function toggleStatus(Client $client)
     $client->update([
         'is_active' => !$client->is_active,
     ]);
+
+
+    // When marking client inactive — pass all user IDs under that client
+        Http::timeout(5)
+            ->withHeaders(['Authorization' => 'Bearer ' . env('ASSIGN_SECRET')])
+            ->post(env('PTT_SERVER_URL') . '/force-disconnect-client', [
+                'userIds' => $client->employees->pluck('user_id')->toArray(),
+                'reason'  => 'client_inactive',
+            ]);
 
     return response()->json([
         'success' => true,
