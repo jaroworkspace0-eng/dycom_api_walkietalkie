@@ -91,6 +91,77 @@ Route::post('/login', function (Request $request) {
 });
 
 
+// test login api
+
+Route::post('/login-test', function (Request $request) {
+
+
+    $request->validate([
+        'email' => 'required|email',
+        'password' => 'required',
+    ]);
+
+    // 1. Eager load the employee and channels immediately to save database queries
+    $user = User::with('employee.channel')->where('email', $request->email)->first();
+
+    if (! $user || ! Hash::check($request->password, $user->password)) {
+        throw ValidationException::withMessages([
+            'email' => ['The provided credentials are incorrect.'],
+        ]);
+    }
+
+    // 2. Block Admins
+    if ($user->role === 'admin' && $request->source !== 'web') {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Access denied. Admins must use the web dashboard.'
+        ], 403);
+    }
+
+     if ($user->role === 'employee' && $request->source !== 'app') {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Access denied. Employees must use the mobile app.'
+        ], 403);
+    }
+
+    if($user->is_active === 0) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Your account is inactive. Please contact the administrator.'
+        ], 403);
+    }
+
+    $user->tokens()->delete();
+    $token = $user->createToken('mobile')->plainTextToken;
+
+    $channels = $user->employee?->channel->map(function($channel) {
+        return [
+            'id' => $channel->id,
+            'name' => $channel->name,
+            // Assuming your Channel model has a relationship to a Company/Client
+        ];
+    }) ?? collect([]);
+
+
+    return response()->json([
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'occupation' => $user->occupation,
+            'user_id' => $user->id,
+            'role' => $user->role
+        ],
+        'channels' => $channels,
+        'token' => $token,
+    ]);
+});
+
+// end test
+
+
 Route::middleware(['auth:sanctum'])->group(function () { 
     Route::get('/user', function (Request $request) {
     return $request->user();
